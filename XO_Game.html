@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لعبة XO - العب مع الأصدقاء</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #4a5568;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+        }
+        
+        .setup-screen {
+            display: block;
+        }
+        
+        .game-screen {
+            display: none;
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #4a5568;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .room-code {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            max-width: 300px;
+            margin: 30px auto;
+        }
+        
+        .cell {
+            width: 80px;
+            height: 80px;
+            background: #f7fafc;
+            border: 3px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cell:hover:not(.taken) {
+            background: #edf2f7;
+            transform: scale(1.05);
+        }
+        
+        .cell.taken {
+            cursor: not-allowed;
+        }
+        
+        .cell.x {
+            color: #e53e3e;
+            background: #fed7d7;
+        }
+        
+        .cell.o {
+            color: #3182ce;
+            background: #bee3f8;
+        }
+        
+        .game-info {
+            margin: 20px 0;
+        }
+        
+        .current-player {
+            font-size: 1.2rem;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 10px;
+        }
+        
+        .players-list {
+            background: #f7fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .winner {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #38a169;
+            margin: 20px 0;
+            padding: 15px;
+            background: #c6f6d5;
+            border-radius: 10px;
+        }
+        
+        .status-message {
+            margin: 15px 0;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        
+        .status-waiting {
+            background: #fef5e7;
+            color: #c05621;
+        }
+        
+        .mode-btn {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 8px;
+            width: calc(100% - 16px);
+        }
+        
+        .mode-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(72, 187, 120, 0.3);
+        }
+        
+        .bot-section, .multiplayer-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(247, 250, 252, 0.7);
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .bot-difficulty select {
+            font-size: 14px;
+        }
+        
+        .bot-turn {
+            color: #e53e3e;
+            font-weight: bold;
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .score-item {
+            text-align: center;
+            flex: 1;
+            padding: 0 10px;
+        }
+        
+        .score-label {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        
+        .player-score .score-value {
+            color: #38a169;
+        }
+        
+        .opponent-score .score-value {
+            color: #e53e3e;
+        }
+        
+        .tie-score .score-value {
+            color: #4299e1;
+        }
+        
+        .game-controls {
+            margin-top: 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .secondary-btn {
+            background: linear-gradient(135deg, #cbd5e0 0%, #a0aec0 100%);
+            color: #2d3748;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .secondary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .cell {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 لعبة XO</h1>
+        
+        <div class="setup-screen" id="setupScreen">
+            <div class="input-group">
+                <label for="playerName">اسم اللاعب:</label>
+                <input type="text" id="playerName" placeholder="أدخل اسمك" maxlength="15">
+            </div>
+            
+            <div class="game-modes">
+                <h3 style="margin: 20px 0; color: #4a5568;">اختر طريقة اللعب:</h3>
+                
+                <div class="bot-section">
+                    <button onclick="showBotOptions()" class="mode-btn">🤖 العب مع البوت</button>
+                    
+                    <div class="bot-difficulty" id="botDifficulty" style="display: none; margin-top: 15px;">
+                        <label>مستوى الصعوبة:</label>
+                        <select id="difficultySelect" style="width: 100%; padding: 10px; border-radius: 8px; border: 2px solid #e2e8f0; margin-top: 5px;">
+                            <option value="easy">سهل 😊</option>
+                            <option value="medium" selected>متوسط 🤔</option>
+                            <option value="hard">صعب 😈</option>
+                        </select>
+                        <button onclick="playWithBot()" style="margin-top: 10px;">ابدأ اللعب</button>
+                    </div>
+                </div>
+                
+                <hr style="margin: 25px 0; border: 1px solid #e2e8f0;">
+                
+                <div class="multiplayer-section">
+                    <h4 style="margin: 15px 0; color: #4a5568;">أو العب مع الأصدقاء:</h4>
+                    
+                    <button onclick="createRoom()" class="mode-btn">إنشاء غرفة جديدة</button>
+                    
+                    <div class="input-group" style="margin-top: 15px;">
+                        <label for="roomCode">أو أدخل كود الغرفة:</label>
+                        <input type="text" id="roomCode" placeholder="0000" maxlength="4" pattern="[0-9]{4}">
+                    </div>
+                    
+                    <button onclick="joinRoom()">انضمام للغرفة</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-screen" id="gameScreen">
+            <div class="score-board">
+                <div class="score-item player-score">
+                    <div class="score-label" id="playerLabel">اللاعب</div>
+                    <div class="score-value" id="playerScore">0</div>
+                </div>
+                <div class="score-item tie-score">
+                    <div class="score-label">تعادل</div>
+                    <div class="score-value" id="tieScore">0</div>
+                </div>
+                <div class="score-item opponent-score">
+                    <div class="score-label" id="opponentLabel">الخصم</div>
+                    <div class="score-value" id="opponentScore">0</div>
+                </div>
+            </div>
+            
+            <div class="players-list" id="playersList"></div>
+            
+            <div class="room-code" id="currentRoomCode"></div>
+            
+            <div class="status-message" id="statusMessage"></div>
+            
+            <div class="current-player" id="currentPlayerInfo"></div>
+            
+            <div class="game-board" id="gameBoard"></div>
+            
+            <div class="winner" id="winnerMessage" style="display: none;"></div>
+            
+            <div class="game-controls">
+                <button onclick="resetGame()" id="resetBtn" style="display: none;">لعبة جديدة</button>
+                <button onclick="resetScore()" class="secondary-btn">إعادة تعيين السكور</button>
+                <button onclick="leaveRoom()" class="secondary-btn">مغادرة الغرفة</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class XOGame {
+            constructor() {
+                this.rooms = {};
+                this.currentRoom = null;
+                this.currentPlayer = null;
+                this.gameBoard = Array(9).fill('');
+                this.currentTurn = 'X';
+                this.gameActive = false;
+                this.winner = null;
+                this.isPlayingWithBot = false;
+                this.botDifficulty = 'medium';
+                this.botSymbol = 'O';
+                this.playerSymbol = 'X';
+                this.score = { player: 0, opponent: 0, ties: 0 };
+                this.playerNames = { player: '', opponent: '' };
+            }
+            
+            generateRoomCode() {
+                return Math.floor(1000 + Math.random() * 9000).toString();
+            }
+            
+            createRoom(playerName) {
+                const roomCode = this.generateRoomCode();
+                this.rooms[roomCode] = {
+                    players: [{ name: playerName, symbol: 'X' }],
+                    board: Array(9).fill(''),
+                    currentTurn: 'X',
+                    gameActive: false,
+                    winner: null,
+                    score: { X: 0, O: 0, ties: 0 }
+                };
+                
+                this.currentRoom = roomCode;
+                this.currentPlayer = { name: playerName, symbol: 'X' };
+                this.gameBoard = Array(9).fill('');
+                this.currentTurn = 'X';
+                this.gameActive = false;
+                this.winner = null;
+                this.score = { player: 0, opponent: 0, ties: 0 };
+                this.playerNames = { player: playerName, opponent: '' };
+                
+                return roomCode;
+            }
+            
+            joinRoom(roomCode, playerName) {
+                if (!this.rooms[roomCode]) {
+                    return { success: false, message: 'الغرفة غير موجودة' };
+                }
+                
+                const room = this.rooms[roomCode];
+                
+                if (room.players.length >= 2) {
+                    return { success: false, message: 'الغرفة ممتلئة' };
+                }
+                
+                if (room.players.some(p => p.name === playerName)) {
+                    return { success: false, message: 'اسم اللاعب موجود بالفعل' };
+                }
+                
+                room.players.push({ name: playerName, symbol: 'O' });
+                room.gameActive = true;
+                
+                this.currentRoom = roomCode;
+                this.currentPlayer = { name: playerName, symbol: 'O' };
+                this.gameBoard = room.board;
+                this.currentTurn = room.currentTurn;
+                this.gameActive = room.gameActive;
+                this.winner = room.winner;
+                
+                // تحديث أسماء اللاعبين والسكور
+                this.playerNames = { 
+                    player: playerName, 
+                    opponent: room.players[0].name 
+                };
+                this.score = { 
+                    player: room.score.O, 
+                    opponent: room.score.X, 
+                    ties: room.score.ties 
+                };
+                
+                return { success: true, message: 'تم الانضمام بنجاح' };
+            }
+            
+            makeMove(index) {
+                if (!this.gameActive || this.gameBoard[index] !== '' || 
+                    (!this.isPlayingWithBot && this.currentTurn !== this.currentPlayer.symbol)) {
+                    return false;
+                }
+                
+                // للعب مع البوت - السماح فقط بحركة اللاعب
+                if (this.isPlayingWithBot && this.currentTurn === this.botSymbol) {
+                    return false;
+                }
+                
+                this.gameBoard[index] = this.currentTurn;
+                if (this.currentRoom && this.rooms[this.currentRoom]) {
+                    this.rooms[this.currentRoom].board[index] = this.currentTurn;
+                }
+                
+                if (this.checkWinner()) {
+                    this.winner = this.currentTurn;
+                    if (this.currentRoom && this.rooms[this.currentRoom]) {
+                        this.rooms[this.currentRoom].winner = this.currentTurn;
+                        this.rooms[this.currentRoom].gameActive = false;
+                        // تحديث السكور في الغرفة
+                        this.rooms[this.currentRoom].score[this.currentTurn]++;
+                    }
+                    this.gameActive = false;
+                    this.updateScore(this.currentTurn);
+                } else if (this.gameBoard.every(cell => cell !== '')) {
+                    this.winner = 'tie';
+                    if (this.currentRoom && this.rooms[this.currentRoom]) {
+                        this.rooms[this.currentRoom].winner = 'tie';
+                        this.rooms[this.currentRoom].gameActive = false;
+                        // تحديث عدد التعادلات
+                        this.rooms[this.currentRoom].score.ties++;
+                    }
+                    this.gameActive = false;
+                    this.updateScore('tie');
+                } else {
+                    this.currentTurn = this.currentTurn === 'X' ? 'O' : 'X';
+                    if (this.currentRoom && this.rooms[this.currentRoom]) {
+                        this.rooms[this.currentRoom].currentTurn = this.currentTurn;
+                    }
+                    
+                    // إذا كان اللعب مع البوت ودور البوت
+                    if (this.isPlayingWithBot && this.currentTurn === this.botSymbol && this.gameActive) {
+                        setTimeout(() => this.makeBotMove(), 500);
+                    }
+                }
+                
+                return true;
+            }
+            
+            makeBotMove() {
+                if (!this.gameActive || this.currentTurn !== this.botSymbol) return;
+                
+                let move;
+                switch (this.botDifficulty) {
+                    case 'easy':
+                        move = this.getRandomMove();
+                        break;
+                    case 'medium':
+                        move = this.getMediumMove();
+                        break;
+                    case 'hard':
+                        move = this.getHardMove();
+                        break;
+                    default:
+                        move = this.getRandomMove();
+                }
+                
+                if (move !== -1) {
+                    this.gameBoard[move] = this.botSymbol;
+                    
+                    if (this.checkWinner()) {
+                        this.winner = this.botSymbol;
+                        this.gameActive = false;
+                        this.updateScore(this.botSymbol);
+                    } else if (this.gameBoard.every(cell => cell !== '')) {
+                        this.winner = 'tie';
+                        this.gameActive = false;
+                        this.updateScore('tie');
+                    } else {
+                        this.currentTurn = this.playerSymbol;
+                    }
+                    
+                    updateGameDisplay();
+                }
+            }
+            
+            getRandomMove() {
+                const availableMoves = [];
+                for (let i = 0; i < 9; i++) {
+                    if (this.gameBoard[i] === '') {
+                        availableMoves.push(i);
+                    }
+                }
+                return availableMoves.length > 0 ? 
+                    availableMoves[Math.floor(Math.random() * availableMoves.length)] : -1;
+            }
+            
+            getMediumMove() {
+                // أولاً: محاولة الفوز
+                let move = this.findWinningMove(this.botSymbol);
+                if (move !== -1) return move;
+                
+                // ثانياً: منع اللاعب من الفوز
+                move = this.findWinningMove(this.playerSymbol);
+                if (move !== -1) return move;
+                
+                // ثالثاً: اختيار المركز إذا كان متاحاً
+                if (this.gameBoard[4] === '') return 4;
+                
+                // أخيراً: حركة عشوائية
+                return this.getRandomMove();
+            }
+            
+            getHardMove() {
+                return this.minimax(this.gameBoard, this.botSymbol).index;
+            }
+            
+            findWinningMove(player) {
+                for (let i = 0; i < 9; i++) {
+                    if (this.gameBoard[i] === '') {
+                        this.gameBoard[i] = player;
+                        if (this.checkWinner()) {
+                            this.gameBoard[i] = '';
+                            return i;
+                        }
+                        this.gameBoard[i] = '';
+                    }
+                }
+                return -1;
+            }
+            
+            minimax(board, player) {
+                const availableMoves = [];
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') availableMoves.push(i);
+                }
+                
+                // فحص الحالة النهائية
+                if (this.checkWinnerForBoard(board, this.playerSymbol)) {
+                    return { score: -10 };
+                } else if (this.checkWinnerForBoard(board, this.botSymbol)) {
+                    return { score: 10 };
+                } else if (availableMoves.length === 0) {
+                    return { score: 0 };
+                }
+                
+                const moves = [];
+                
+                for (let i = 0; i < availableMoves.length; i++) {
+                    const move = {};
+                    move.index = availableMoves[i];
+                    board[availableMoves[i]] = player;
+                    
+                    if (player === this.botSymbol) {
+                        const result = this.minimax(board, this.playerSymbol);
+                        move.score = result.score;
+                    } else {
+                        const result = this.minimax(board, this.botSymbol);
+                        move.score = result.score;
+                    }
+                    
+                    board[availableMoves[i]] = '';
+                    moves.push(move);
+                }
+                
+                let bestMove;
+                if (player === this.botSymbol) {
+                    let bestScore = -10000;
+                    for (let i = 0; i < moves.length; i++) {
+                        if (moves[i].score > bestScore) {
+                            bestScore = moves[i].score;
+                            bestMove = i;
+                        }
+                    }
+                } else {
+                    let bestScore = 10000;
+                    for (let i = 0; i < moves.length; i++) {
+                        if (moves[i].score < bestScore) {
+                            bestScore = moves[i].score;
+                            bestMove = i;
+                        }
+                    }
+                }
+                
+                return moves[bestMove];
+            }
+            
+            checkWinnerForBoard(board, player) {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+                
+                return winPatterns.some(pattern => {
+                    const [a, b, c] = pattern;
+                    return board[a] === player && board[a] === board[b] && board[a] === board[c];
+                });
+            }
+            
+            startBotGame(playerName, difficulty) {
+                this.isPlayingWithBot = true;
+                this.botDifficulty = difficulty;
+                this.currentPlayer = { name: playerName, symbol: this.playerSymbol };
+                this.gameBoard = Array(9).fill('');
+                this.currentTurn = 'X';
+                this.gameActive = true;
+                this.winner = null;
+                this.currentRoom = null;
+                this.playerNames = { player: playerName, opponent: 'البوت' };
+                this.score = { player: 0, opponent: 0, ties: 0 };
+            }
+            
+            updateScore(winner) {
+                if (this.isPlayingWithBot) {
+                    if (winner === this.playerSymbol) {
+                        this.score.player++;
+                    } else if (winner === this.botSymbol) {
+                        this.score.opponent++;
+                    } else if (winner === 'tie') {
+                        this.score.ties++;
+                    }
+                } else {
+                    // للعب متعدد اللاعبين
+                    if (winner === this.currentPlayer.symbol) {
+                        this.score.player++;
+                    } else if (winner !== 'tie') {
+                        this.score.opponent++;
+                    } else {
+                        this.score.ties++;
+                    }
+                }
+            }
+            
+            resetScore() {
+                this.score = { player: 0, opponent: 0, ties: 0 };
+                if (this.currentRoom && this.rooms[this.currentRoom]) {
+                    this.rooms[this.currentRoom].score = { X: 0, O: 0, ties: 0 };
+                }
+            }
+            
+            checkWinner() {
+                const winPatterns = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8], // صفوف
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8], // أعمدة
+                    [0, 4, 8], [2, 4, 6] // أقطار
+                ];
+                
+                return winPatterns.some(pattern => {
+                    const [a, b, c] = pattern;
+                    return this.gameBoard[a] && 
+                           this.gameBoard[a] === this.gameBoard[b] && 
+                           this.gameBoard[a] === this.gameBoard[c];
+                });
+            }
+            
+            resetGame() {
+                if (this.isPlayingWithBot) {
+                    this.gameBoard = Array(9).fill('');
+                    this.currentTurn = 'X';
+                    this.gameActive = true;
+                    this.winner = null;
+                } else if (this.currentRoom && this.rooms[this.currentRoom]) {
+                    this.gameBoard = Array(9).fill('');
+                    this.currentTurn = 'X';
+                    this.gameActive = this.rooms[this.currentRoom].players.length === 2;
+                    this.winner = null;
+                    
+                    this.rooms[this.currentRoom].board = Array(9).fill('');
+                    this.rooms[this.currentRoom].currentTurn = 'X';
+                    this.rooms[this.currentRoom].gameActive = this.gameActive;
+                    this.rooms[this.currentRoom].winner = null;
+                }
+            }
+            
+            leaveRoom() {
+                this.currentRoom = null;
+                this.currentPlayer = null;
+                this.gameBoard = Array(9).fill('');
+                this.currentTurn = 'X';
+                this.gameActive = false;
+                this.winner = null;
+                this.isPlayingWithBot = false;
+                this.botDifficulty = 'medium';
+                this.score = { player: 0, opponent: 0, ties: 0 };
+                this.playerNames = { player: '', opponent: '' };
+            }
+            
+            getRoomData() {
+                if (!this.currentRoom || !this.rooms[this.currentRoom]) {
+                    return null;
+                }
+                return this.rooms[this.currentRoom];
+            }
+        }
+        
+        const game = new XOGame();
+        
+        function showBotOptions() {
+            const botDifficulty = document.getElementById('botDifficulty');
+            botDifficulty.style.display = botDifficulty.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        function playWithBot() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('يرجى إدخال اسم اللاعب');
+                return;
+            }
+            
+            const difficulty = document.getElementById('difficultySelect').value;
+            game.startBotGame(playerName, difficulty);
+            showGameScreenForBot();
+            updateGameDisplay();
+        }
+        
+        function showGameScreenForBot() {
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('currentRoomCode').textContent = '🤖 اللعب مع البوت';
+            createGameBoard();
+        }
+        
+        function createRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('يرجى إدخال اسم اللاعب');
+                return;
+            }
+            
+            const roomCode = game.createRoom(playerName);
+            showGameScreen(roomCode);
+            updateGameDisplay();
+        }
+        
+        function joinRoom() {
+            const playerName = document.getElementById('playerName').value.trim();
+            const roomCode = document.getElementById('roomCode').value.trim();
+            
+            if (!playerName) {
+                alert('يرجى إدخال اسم اللاعب');
+                return;
+            }
+            
+            if (!/^\d{4}$/.test(roomCode)) {
+                alert('يرجى إدخال كود صحيح مكون من 4 أرقام');
+                return;
+            }
+            
+            const result = game.joinRoom(roomCode, playerName);
+            if (result.success) {
+                showGameScreen(roomCode);
+                updateGameDisplay();
+            } else {
+                alert(result.message);
+            }
+        }
+        
+        function showGameScreen(roomCode) {
+            document.getElementById('setupScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('currentRoomCode').textContent = `كود الغرفة: ${roomCode}`;
+            createGameBoard();
+        }
+        
+        function createGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.onclick = () => makeMove(i);
+                cell.id = `cell-${i}`;
+                board.appendChild(cell);
+            }
+        }
+        
+        function makeMove(index) {
+            if (game.makeMove(index)) {
+                updateGameDisplay();
+            }
+        }
+        
+        function updateGameDisplay() {
+            // تحديث اللوحة
+            for (let i = 0; i < 9; i++) {
+                const cell = document.getElementById(`cell-${i}`);
+                const value = game.gameBoard[i];
+                cell.textContent = value;
+                cell.className = `cell ${value.toLowerCase()}`;
+                if (value) cell.classList.add('taken');
+            }
+            
+            // تحديث السكور
+            updateScoreDisplay();
+            
+            const playersList = document.getElementById('playersList');
+            const statusMessage = document.getElementById('statusMessage');
+            const currentPlayerInfo = document.getElementById('currentPlayerInfo');
+            
+            if (game.isPlayingWithBot) {
+                // عرض معلومات اللعب مع البوت
+                playersList.innerHTML = `
+                    <h3>اللاعبون:</h3>
+                    <div>${game.currentPlayer.name} (X)</div>
+                    <div>البوت (O) - ${getDifficultyText(game.botDifficulty)}</div>
+                `;
+                
+                statusMessage.textContent = 'جاهز للعب مع البوت!';
+                statusMessage.className = 'status-message status-ready';
+                
+                if (game.gameActive) {
+                    if (game.currentTurn === game.playerSymbol) {
+                        currentPlayerInfo.textContent = 'دورك الآن!';
+                        currentPlayerInfo.style.background = '#c6f6d5';
+                        currentPlayerInfo.style.color = '#22543d';
+                    } else {
+                        currentPlayerInfo.textContent = 'دور البوت... 🤖';
+                        currentPlayerInfo.style.background = '#fed7d7';
+                        currentPlayerInfo.style.color = '#c53030';
+                        currentPlayerInfo.classList.add('bot-turn');
+                    }
+                } else {
+                    currentPlayerInfo.textContent = '';
+                }
+            } else {
+                // عرض معلومات اللعب متعدد اللاعبين
+                const roomData = game.getRoomData();
+                if (!roomData) return;
+                
+                playersList.innerHTML = '<h3>اللاعبون:</h3>';
+                roomData.players.forEach(player => {
+                    const playerDiv = document.createElement('div');
+                    playerDiv.textContent = `${player.name} (${player.symbol})`;
+                    if (player.symbol === game.currentTurn && game.gameActive) {
+                        playerDiv.style.fontWeight = 'bold';
+                        playerDiv.style.color = '#667eea';
+                    }
+                    playersList.appendChild(playerDiv);
+                });
+                
+                if (roomData.players.length < 2) {
+                    statusMessage.textContent = 'في انتظار لاعب آخر...';
+                    statusMessage.className = 'status-message status-waiting';
+                } else {
+                    statusMessage.textContent = 'جاهز للعب!';
+                    statusMessage.className = 'status-message status-ready';
+                }
+                
+                if (game.gameActive) {
+                    const currentPlayerName = roomData.players.find(p => p.symbol === game.currentTurn)?.name || '';
+                    if (game.currentTurn === game.currentPlayer.symbol) {
+                        currentPlayerInfo.textContent = 'دورك الآن!';
+                        currentPlayerInfo.style.background = '#c6f6d5';
+                        currentPlayerInfo.style.color = '#22543d';
+                    } else {
+                        currentPlayerInfo.textContent = `دور ${currentPlayerName}`;
+                        currentPlayerInfo.style.background = '#fef5e7';
+                        currentPlayerInfo.style.color = '#c05621';
+                    }
+                } else {
+                    currentPlayerInfo.textContent = '';
+                }
+            }
+            
+            // تحديث رسالة الفائز
+            const winnerMessage = document.getElementById('winnerMessage');
+            const resetBtn = document.getElementById('resetBtn');
+            
+            if (game.winner) {
+                if (game.winner === 'tie') {
+                    winnerMessage.textContent = '🤝 تعادل!';
+                } else if (game.isPlayingWithBot) {
+                    if (game.winner === game.playerSymbol) {
+                        winnerMessage.textContent = `🎉 تهانينا! فزت على البوت!`;
+                    } else {
+                        winnerMessage.textContent = `🤖 البوت فاز! حاول مرة أخرى`;
+                    }
+                } else {
+                    const roomData = game.getRoomData();
+                    const winnerName = roomData?.players.find(p => p.symbol === game.winner)?.name || game.winner;
+                    winnerMessage.textContent = `🎉 الفائز: ${winnerName}`;
+                }
+                winnerMessage.style.display = 'block';
+                resetBtn.style.display = 'inline-block';
+            } else {
+                winnerMessage.style.display = 'none';
+                resetBtn.style.display = 'none';
+            }
+        }
+        
+        function updateScoreDisplay() {
+            document.getElementById('playerScore').textContent = game.score.player;
+            document.getElementById('opponentScore').textContent = game.score.opponent;
+            document.getElementById('tieScore').textContent = game.score.ties;
+            
+            // تحديث أسماء اللاعبين
+            document.getElementById('playerLabel').textContent = game.playerNames.player || 'اللاعب';
+            document.getElementById('opponentLabel').textContent = game.playerNames.opponent || 'الخصم';
+        }
+        
+        function resetScore() {
+            if (confirm('هل تريد إعادة تعيين السكور؟')) {
+                game.resetScore();
+                updateScoreDisplay();
+            }
+        }
+        
+        function getDifficultyText(difficulty) {
+            switch (difficulty) {
+                case 'easy': return 'سهل 😊';
+                case 'medium': return 'متوسط 🤔';
+                case 'hard': return 'صعب 😈';
+                default: return 'متوسط 🤔';
+            }
+        }
+        
+        function resetGame() {
+            game.resetGame();
+            updateGameDisplay();
+        }
+        
+        function leaveRoom() {
+            game.leaveRoom();
+            document.getElementById('setupScreen').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('playerName').value = '';
+            document.getElementById('roomCode').value = '';
+            document.getElementById('botDifficulty').style.display = 'none';
+        }
+        
+        // تحديث العرض كل ثانية للتزامن مع اللاعبين الآخرين (محاكاة)
+        setInterval(() => {
+            if (game.currentRoom && !game.isPlayingWithBot) {
+                // في التطبيق الحقيقي، هنا سيتم جلب البيانات من الخادم
+                updateGameDisplay();
+            }
+        }, 1000);
+        
+        
+        // تحديث العرض كل ثانية للتزامن مع اللاعبين الآخرين (محاكاة)
+        setInterval(() => {
+            if (game.currentRoom) {
+                // في التطبيق الحقيقي، هنا سيتم جلب البيانات من الخادم
+                updateGameDisplay();
+            }
+        }, 1000);
+    </script>
+</body>
+</html>
